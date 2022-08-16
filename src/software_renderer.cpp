@@ -244,6 +244,58 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
   // Task 2: 
   // Implement line rasterization
+
+  int sx0 = (int)floor(x0);
+  int sx1 = (int)floor(x1);
+  int sy0 = (int)floor(y0);
+  int sy1 = (int)floor(y1);
+
+  bool stepping_over_y = abs(sx0 - sx1) < abs(sy0 - sy1);
+  if (stepping_over_y) {
+    swap(sx0, sy0);
+    swap(sx1, sy1);
+  }
+
+  if (sx0 > sx1) {
+    swap(sx0, sx1);
+    swap(sy0, sy1);
+  }
+
+  int dx = sx1 - sx0;
+  int dy = sy1 - sy0;
+  int sy = sy0;
+  int eps = 0;
+
+  for (int sx = sx0; sx <= sx1; ++sx) {
+    if (stepping_over_y) {
+      if ( sy < 0 || sy >= target_w ) continue;
+      if ( sx < 0 || sx >= target_h ) continue;
+      render_target[4 * (sy + sx * target_w)    ] = (uint8_t) (color.r * 255);
+      render_target[4 * (sy + sx * target_w) + 1] = (uint8_t) (color.g * 255);
+      render_target[4 * (sy + sx * target_w) + 2] = (uint8_t) (color.b * 255);
+      render_target[4 * (sy + sx * target_w) + 3] = (uint8_t) (color.a * 255);
+    } else {
+      if ( sx < 0 || sx >= target_w ) continue;
+      if ( sy < 0 || sy >= target_h ) continue;
+      render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
+      render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
+      render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
+      render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
+    }
+
+    eps += dy;
+    if (dy >= 0) {
+      if ((eps << 1) >= dx) {
+        sy++;
+        eps -= dx;
+      }
+    } else {
+      if ((eps << 1) <= -dx) {
+        sy--;
+        eps += dx;
+      }
+    }
+  }
 }
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
