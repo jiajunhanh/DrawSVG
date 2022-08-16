@@ -11,6 +11,28 @@ using namespace std;
 
 namespace CMU462 {
 
+const static auto epsilon = numeric_limits<float>::epsilon();
+
+inline bool inside_triangle(float x0, float y0,
+                            float x1, float y1,
+                            float x2, float y2,
+                            float x3, float y3) {
+  Vector2D AB(x1 - x0, y1 - y0);
+  Vector2D BC(x2 - x1, y2 - y1);
+  Vector2D CA(x0 - x2, y0 - y2);
+  Vector2D AP(x3 - x0, y3 - y0);
+  Vector2D BP(x3 - x1, y3 - y1);
+  Vector2D CP(x3 - x2, y3 - y2);
+  auto c0 = cross(AB, AP);
+  auto c1 = cross(BC, BP);
+  auto c2 = cross(CA, CP);
+  if ((c0 > 0 && c1 > 0 && c2 > 0) || (c0 < 0 && c1 < 0 && c2 < 0)
+      || abs(c0) < epsilon || abs(c1) < epsilon || abs(c2) < epsilon) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 // Implements SoftwareRenderer //
 
@@ -305,6 +327,26 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   // Task 3: 
   // Implement triangle rasterization
 
+  // bounding box
+  int bx0 = min(x0, min(x1, x2));
+  int bx1 = max(x0, max(x1, x2));
+  int by0 = min(y0, min(y1, y2));
+  int by1 = max(y0, max(y1, y2));
+
+  // testing
+  for (int sx = bx0; sx <= bx1; ++sx) {
+    for (int sy = by0; sy <= by1; ++sy) {
+      if (inside_triangle(x0, y0,
+                          x1, y1,
+                          x2, y2,
+                          (float)sx + 0.5f, (float)sy + 0.5f)) {
+        render_target[4 * (sx + sy * target_w)] = (uint8_t)(color.r * 255);
+        render_target[4 * (sx + sy * target_w) + 1] = (uint8_t)(color.g * 255);
+        render_target[4 * (sx + sy * target_w) + 2] = (uint8_t)(color.b * 255);
+        render_target[4 * (sx + sy * target_w) + 3] = (uint8_t)(color.a * 255);
+      }
+    }
+  }
 }
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,
