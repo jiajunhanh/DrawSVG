@@ -131,7 +131,12 @@ class SoftwareRendererImp : public SoftwareRenderer {
                         Texture& tex );
 
   // resolve samples to render target
-  void resolve( void );
+  void resolve();
+
+  // Helpers //
+  std::vector<unsigned char> sample_buffer; int w; int h;
+  void fill_sample( int sx, int sy, const Color& c );
+  void fill_pixel( int x, int y, const Color& c );
 
 }; // class SoftwareRendererImp
 
