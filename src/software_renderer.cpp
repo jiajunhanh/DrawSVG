@@ -11,7 +11,7 @@ using namespace std;
 
 namespace CMU462 {
 
-const static auto epsilon = numeric_limits<float>::epsilon();
+constexpr static auto epsilon = numeric_limits<float>::epsilon();
 
 inline bool inside_triangle(float x0, float y0,
                             float x1, float y1,
@@ -28,6 +28,53 @@ inline bool inside_triangle(float x0, float y0,
   auto c2 = cross(CA, CP);
   if ((c0 > 0 && c1 > 0 && c2 > 0) || (c0 < 0 && c1 < 0 && c2 < 0)
       || abs(c0) < epsilon || abs(c1) < epsilon || abs(c2) < epsilon) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool inside_rectangle(float bx0, float by0,
+                             float bx1, float by1,
+                             float x, float y) {
+  return (x >= bx0 && x <= bx1 && y >= by0 && y <= by1);
+}
+
+inline bool rectangle_segment_intersection(float bx0, float by0,
+                                           float bx1, float by1,
+                                           float x0, float y0,
+                                           float x1, float y1) {
+
+  if (abs(x1 - x0) > epsilon) {
+    auto iy0 = y0 + (bx0 - x0) * (y1 - y0) / (x1 - x0);
+    auto iy1 = y0 + (bx1 - x0) * (y1 - y0) / (x1 - x0);
+    if ((iy0 >= by0 && iy0 <= by1) || (iy1 >= by0 && iy1 <= by1)) {
+      return true;
+    }
+  }
+
+  if (abs(y1 - y0) > epsilon) {
+    auto ix0 = x0 + (by0 - y0) * (x1 - x0) / (y1 - y0);
+    auto ix1 = x0 + (by1 - y0) * (x1 - x0) / (y1 - y0);
+    if ((ix0 >= bx0 && ix0 <= bx1) || (ix1 >= bx0 && ix1 <= bx1)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+inline bool rectangle_triangle_intersection(float bx0, float by0,
+                                            float bx1, float by1,
+                                            float x0, float y0,
+                                            float x1, float y1,
+                                            float x2, float y2) {
+  if (inside_rectangle(bx0, by0, bx1, by1, x0, y0)
+      || inside_rectangle(bx0, by0, bx1, by1, x1, y1)
+      || inside_rectangle(bx0, by0, bx1, by1, x2, y2)
+      || rectangle_segment_intersection(bx0, by0, bx1, by1, x0, y0, x1, y1)
+      || rectangle_segment_intersection(bx0, by0, bx1, by1, x1, y1, x2, y2)
+      || rectangle_segment_intersection(bx0, by0, bx1, by1, x2, y2, x0, y0)) {
     return true;
   } else {
     return false;
@@ -319,22 +366,14 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   y2 *= sample_rate;
 
   // bounding box
-  int bx0 = min(x0, min(x1, x2));
-  int bx1 = max(x0, max(x1, x2));
-  int by0 = min(y0, min(y1, y2));
-  int by1 = max(y0, max(y1, y2));
+  int bx0 = floor(min(x0, min(x1, x2)));
+  int bx1 = floor(max(x0, max(x1, x2)));
+  int by0 = floor(min(y0, min(y1, y2)));
+  int by1 = floor(max(y0, max(y1, y2)));
 
-  // testing
-  for (int sx = bx0; sx <= bx1; ++sx) {
-    for (int sy = by0; sy <= by1; ++sy) {
-      if (inside_triangle(x0, y0,
-                          x1, y1,
-                          x2, y2,
-                          (float)sx + 0.5f, (float)sy + 0.5f)) {
-        fill_sample(sx, sy, color);
-      }
-    }
-  }
+  rasterize_triangle_box(bx0, by0, bx1, by1,
+                         x0, y0, x1, y1, x2, y2,
+                         color);
 }
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,
@@ -356,8 +395,14 @@ void SoftwareRendererImp::resolve() {
     for (int sy = 0; sy < target_h; ++sy) {
       for (int i = 0; i < 4; ++i) {
         int sum = 0;
-        for (int bx = sx * sample_rate; bx < (sx + 1) * sample_rate; ++bx) {
-          for (int by = sy * sample_rate; by < (sy + 1) * sample_rate; ++by) {
+        // box
+        int lx = sx * sample_rate;
+        int rx = (sx + 1) * sample_rate;
+        int uy = sy * sample_rate;
+        int dy = (sy + 1) * sample_rate;
+
+        for (int bx = lx; bx < rx; ++bx) {
+          for (int by = uy; by < dy; ++by) {
             sum += sample_buffer[4 * (bx + by * w) + i];
           }
         }
@@ -379,16 +424,84 @@ void SoftwareRendererImp::fill_sample(int sx, int sy, const Color &c) {
 }
 
 void SoftwareRendererImp::fill_pixel(int x, int y, const Color &c) {
-  if ( x < 0 || x >= target_w ) return;
-  if ( y < 0 || y >= target_h ) return;
+  if (x < 0 || x >= target_w) return;
+  if (y < 0 || y >= target_h) return;
 
-  for (int bx = x * sample_rate; bx < (x + 1) * sample_rate; ++bx) {
-    for (int by = y * sample_rate; by < (y + 1) * sample_rate; ++by) {
-      sample_buffer[4 * (bx + by * w)    ] = (uint8_t) (c.r * 255);
-      sample_buffer[4 * (bx + by * w) + 1] = (uint8_t) (c.g * 255);
-      sample_buffer[4 * (bx + by * w) + 2] = (uint8_t) (c.b * 255);
-      sample_buffer[4 * (bx + by * w) + 3] = (uint8_t) (c.a * 255);
+  // box
+  int lx = x * sample_rate;
+  int rx = (x + 1) * sample_rate;
+  int uy = y * sample_rate;
+  int dy = (y + 1) * sample_rate;
+
+  for (int bx = lx; bx < rx; ++bx) {
+    for (int by = uy; by < dy; ++by) {
+      sample_buffer[4 * (bx + by * w)] = (uint8_t)(c.r * 255);
+      sample_buffer[4 * (bx + by * w) + 1] = (uint8_t)(c.g * 255);
+      sample_buffer[4 * (bx + by * w) + 2] = (uint8_t)(c.b * 255);
+      sample_buffer[4 * (bx + by * w) + 3] = (uint8_t)(c.a * 255);
     }
+  }
+}
+
+void SoftwareRendererImp::rasterize_triangle_box(int bx0, int by0,
+                                                 int bx1, int by1,
+                                                 float x0, float y0,
+                                                 float x1, float y1,
+                                                 float x2, float y2,
+                                                 Color color) {
+  // rasterize triangle for a box
+
+  constexpr static int smallest_box_size = 8;
+
+  bool left_up_inside = inside_triangle(x0, y0, x1, y1, x2, y2,
+                                        (float)bx0 + 0.5f, (float)by0 + 0.5f);
+  bool right_up_inside = inside_triangle(x0, y0, x1, y1, x2, y2,
+                                         (float)bx1 + 0.5f, (float)by0 + 0.5f);
+  bool left_bottom_inside = inside_triangle(x0, y0, x1, y1, x2, y2,
+                                            (float)bx0 + 0.5f,
+                                            (float)by1 + 0.5f);
+  bool right_bottom_inside = inside_triangle(x0, y0, x1, y1, x2, y2,
+                                             (float)bx1 + 0.5f,
+                                             (float)by1 + 0.5f);
+
+  if (left_up_inside && right_up_inside && left_bottom_inside
+      && right_bottom_inside) {
+    for (int sx = bx0; sx <= bx1; ++sx) {
+      for (int sy = by0; sy <= by1; ++sy) {
+        fill_sample(sx, sy, color);
+      }
+    }
+  } else if (!rectangle_triangle_intersection((float)bx0 + 0.5f,
+                                              (float)by0 + 0.5f,
+                                              (float)bx1 + 0.5f,
+                                              (float)by1 + 0.5f,
+                                              x0, y0, x1, y1, x2, y2)) {
+    return;
+  } else if (bx1 - bx0 <= smallest_box_size && by1 - by0 <= smallest_box_size) {
+    for (int sx = bx0; sx <= bx1; ++sx) {
+      for (int sy = by0; sy <= by1; ++sy) {
+        if (inside_triangle(x0, y0, x1, y1, x2, y2,
+                            (float)sx + 0.5f, (float)sy + 0.5f)) {
+          fill_sample(sx, sy, color);
+        }
+      }
+    }
+  } else if (bx1 - bx0 >= by1 - by0) {
+    int bx_center = bx0 + (bx1 - bx0) / 2;
+    rasterize_triangle_box(bx0, by0, bx_center, by1,
+                           x0, y0, x1, y1, x2, y2,
+                           color);
+    rasterize_triangle_box(bx_center + 1, by0, bx1, by1,
+                           x0, y0, x1, y1, x2, y2,
+                           color);
+  } else {
+    int by_center = by0 + (by1 - by0) / 2;
+    rasterize_triangle_box(bx0, by0, bx1, by_center,
+                           x0, y0, x1, y1, x2, y2,
+                           color);
+    rasterize_triangle_box(bx0, by_center + 1, bx1, by1,
+                           x0, y0, x1, y1, x2, y2,
+                           color);
   }
 }
 

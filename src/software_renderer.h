@@ -137,6 +137,12 @@ class SoftwareRendererImp : public SoftwareRenderer {
   std::vector<unsigned char> sample_buffer; int w; int h;
   void fill_sample( int sx, int sy, const Color& c );
   void fill_pixel( int x, int y, const Color& c );
+  void rasterize_triangle_box(int bx0, int by0,
+                              int bx1, int by1,
+                              float x0, float y0,
+                              float x1, float y1,
+                              float x2, float y2,
+                              Color color);
 
 }; // class SoftwareRendererImp
 
