@@ -108,29 +108,32 @@ Color Sampler2DImp::sample_bilinear(Texture& tex,
 
   if (level >= 0 && level < tex.mipmap.size()) {
     const auto &map = tex.mipmap[level];
-    int su = floor(u * (float)map.width - 0.5f);
-    int sv = floor(v * (float)map.height - 0.5f);
-    auto s = u * (float)map.width - ((float)su + 0.5f);
-    auto t = v * (float)map.height - ((float)sv + 0.5f);
-    Color c00{(float)map.texels[4 * (su + sv * map.width)] / 255.0f,
-              (float)map.texels[4 * (su + sv * map.width) + 1] / 255.0f,
-              (float)map.texels[4 * (su + sv * map.width) + 2] / 255.0f,
-              (float)map.texels[4 * (su + sv * map.width) + 3] / 255.0f};
-    Color c10{(float)map.texels[4 * (su + 1 + sv * map.width)] / 255.0f,
-              (float)map.texels[4 * (su + 1 + sv * map.width) + 1] / 255.0f,
-              (float)map.texels[4 * (su + 1 + sv * map.width) + 2] / 255.0f,
-              (float)map.texels[4 * (su + 1 + sv * map.width) + 3] / 255.0f};
-    Color c01{(float)map.texels[4 * (su + (sv + 1) * map.width)] / 255.0f,
-              (float)map.texels[4 * (su + (sv + 1) * map.width) + 1] / 255.0f,
-              (float)map.texels[4 * (su + (sv + 1) * map.width) + 2] / 255.0f,
-              (float)map.texels[4 * (su + (sv + 1) * map.width) + 3] / 255.0f};
-    Color c11{(float)map.texels[4 * (su + 1 + (sv + 1) * map.width)] / 255.0f,
-              (float)map.texels[4 * (su + 1 + (sv + 1) * map.width) + 1]
-                  / 255.0f,
-              (float)map.texels[4 * (su + 1 + (sv + 1) * map.width) + 2]
-                  / 255.0f,
-              (float)map.texels[4 * (su + 1 + (sv + 1) * map.width) + 3]
-                  / 255.0f};
+    int su0 = floor(u * (float)map.width - 0.5f);
+    int sv0 = floor(v * (float)map.height - 0.5f);
+    int su1 = su0 + 1;
+    int sv1 = sv0 + 1;
+    auto s = u * (float)map.width - ((float)su0 + 0.5f);
+    auto t = v * (float)map.height - ((float)sv0 + 0.5f);
+    su0 = max(su0, 0);
+    sv0 = max(sv0, 0);
+    su1 = min(su1, int(map.width - 1));
+    sv1 = min(sv1, int(map.height - 1));
+    Color c00{(float)map.texels[4 * (su0 + sv0 * map.width)] / 255.0f,
+              (float)map.texels[4 * (su0 + sv0 * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su0 + sv0 * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su0 + sv0 * map.width) + 3] / 255.0f};
+    Color c10{(float)map.texels[4 * (su1 + sv0 * map.width)] / 255.0f,
+              (float)map.texels[4 * (su1 + sv0 * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su1 + sv0 * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su1 + sv0 * map.width) + 3] / 255.0f};
+    Color c01{(float)map.texels[4 * (su0 + sv1 * map.width)] / 255.0f,
+              (float)map.texels[4 * (su0 + sv1 * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su0 + sv1 * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su0 + sv1 * map.width) + 3] / 255.0f};
+    Color c11{(float)map.texels[4 * (su1 + sv1 * map.width)] / 255.0f,
+              (float)map.texels[4 * (su1 + sv1 * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su1 + sv1 * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su1 + sv1 * map.width) + 3] / 255.0f};
     return (1.0f - t) * ((1.0f - s) * c00 + s * c10)
         + t * ((1.0f - s) * c01 + s * c11);
   }
