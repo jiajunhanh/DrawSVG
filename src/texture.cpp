@@ -106,6 +106,35 @@ Color Sampler2DImp::sample_bilinear(Texture& tex,
   
   // Task 6: Implement bilinear filtering
 
+  if (level >= 0 && level < tex.mipmap.size()) {
+    const auto &map = tex.mipmap[level];
+    int su = floor(u * (float)map.width - 0.5f);
+    int sv = floor(v * (float)map.height - 0.5f);
+    auto s = u * (float)map.width - ((float)su + 0.5f);
+    auto t = v * (float)map.height - ((float)sv + 0.5f);
+    Color c00{(float)map.texels[4 * (su + sv * map.width)] / 255.0f,
+              (float)map.texels[4 * (su + sv * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su + sv * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su + sv * map.width) + 3] / 255.0f};
+    Color c10{(float)map.texels[4 * (su + 1 + sv * map.width)] / 255.0f,
+              (float)map.texels[4 * (su + 1 + sv * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su + 1 + sv * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su + 1 + sv * map.width) + 3] / 255.0f};
+    Color c01{(float)map.texels[4 * (su + (sv + 1) * map.width)] / 255.0f,
+              (float)map.texels[4 * (su + (sv + 1) * map.width) + 1] / 255.0f,
+              (float)map.texels[4 * (su + (sv + 1) * map.width) + 2] / 255.0f,
+              (float)map.texels[4 * (su + (sv + 1) * map.width) + 3] / 255.0f};
+    Color c11{(float)map.texels[4 * (su + 1 + (sv + 1) * map.width)] / 255.0f,
+              (float)map.texels[4 * (su + 1 + (sv + 1) * map.width) + 1]
+                  / 255.0f,
+              (float)map.texels[4 * (su + 1 + (sv + 1) * map.width) + 2]
+                  / 255.0f,
+              (float)map.texels[4 * (su + 1 + (sv + 1) * map.width) + 3]
+                  / 255.0f};
+    return (1.0f - t) * ((1.0f - s) * c00 + s * c10)
+        + t * ((1.0f - s) * c01 + s * c11);
+  }
+
   // return magenta for invalid level
   return Color(1,0,1,1);
 

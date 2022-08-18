@@ -403,12 +403,12 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
     for (auto sy = sy0; sy <= sy1; ++sy) {
       fill_sample(sx,
                   sy,
-                  sampler->sample_nearest(tex,
-                                          ((float)sx - x0 + 0.5f)
-                                              / image_width,
-                                          ((float)sy - y0 + 0.5f)
-                                              / image_height,
-                                          0));
+                  sampler->sample_bilinear(tex,
+                                           ((float)sx - x0 + 0.5f)
+                                               / image_width,
+                                           ((float)sy - y0 + 0.5f)
+                                               / image_height,
+                                           0));
     }
   }
 }
