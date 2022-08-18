@@ -386,6 +386,31 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
   // Task 6: 
   // Implement image rasterization
 
+  x0 *= (float)sample_rate;
+  y0 *= (float)sample_rate;
+  x1 *= (float)sample_rate;
+  y1 *= (float)sample_rate;
+
+  auto image_width = x1 - x0;
+  auto image_height = y1 - y0;
+
+  int sx0 = floor(x0);
+  int sy0 = floor(y0);
+  int sx1 = floor(x1);
+  int sy1 = floor(y1);
+
+  for (auto sx = sx0; sx <= sx1; ++sx) {
+    for (auto sy = sy0; sy <= sy1; ++sy) {
+      fill_sample(sx,
+                  sy,
+                  sampler->sample_nearest(tex,
+                                          ((float)sx - x0 + 0.5f)
+                                              / image_width,
+                                          ((float)sy - y0 + 0.5f)
+                                              / image_height,
+                                          0));
+    }
+  }
 }
 
 // resolve samples to render target
