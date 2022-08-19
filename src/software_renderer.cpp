@@ -456,10 +456,26 @@ void SoftwareRendererImp::resolve() {
 void SoftwareRendererImp::fill_sample(int sx, int sy, const Color &c) {
   if ( sx < 0 || sx >= w ) return;
   if ( sy < 0 || sy >= h ) return;
-  sample_buffer[4 * (sx + sy * w)    ] = (uint8_t) (c.r * 255);
-  sample_buffer[4 * (sx + sy * w) + 1] = (uint8_t) (c.g * 255);
-  sample_buffer[4 * (sx + sy * w) + 2] = (uint8_t) (c.b * 255);
-  sample_buffer[4 * (sx + sy * w) + 3] = (uint8_t) (c.a * 255);
+  Color old_c{static_cast<float>(sample_buffer[4 * (sx + sy * w)]) / 255.0f,
+              static_cast<float>(sample_buffer[4 * (sx + sy * w) + 1]) / 255.0f,
+              static_cast<float>(sample_buffer[4 * (sx + sy * w) + 2]) / 255.0f,
+              static_cast<float>(sample_buffer[4 * (sx + sy * w) + 3]) / 255.0f
+  };
+  Color new_c;
+
+  old_c.r *= old_c.a;
+  old_c.g *= old_c.a;
+  old_c.b *= old_c.a;
+
+  new_c.a = 1.0f - (1.0f - c.a) * (1.0f - old_c.a);
+  new_c.r = ((1.0f - c.a) * old_c.r + c.r * c.a) / new_c.a;
+  new_c.g = ((1.0f - c.a) * old_c.g + c.g * c.a) / new_c.a;
+  new_c.b = ((1.0f - c.a) * old_c.b + c.b * c.a) / new_c.a;
+
+  sample_buffer[4 * (sx + sy * w)] = (uint8_t)(new_c.r * 255);
+  sample_buffer[4 * (sx + sy * w) + 1] = (uint8_t)(new_c.g * 255);
+  sample_buffer[4 * (sx + sy * w) + 2] = (uint8_t)(new_c.b * 255);
+  sample_buffer[4 * (sx + sy * w) + 3] = (uint8_t)(new_c.a * 255);
 }
 
 void SoftwareRendererImp::fill_pixel(int x, int y, const Color &c) {
@@ -474,10 +490,7 @@ void SoftwareRendererImp::fill_pixel(int x, int y, const Color &c) {
 
   for (int by = uy; by < dy; ++by) {
     for (int bx = lx; bx < rx; ++bx) {
-      sample_buffer[4 * (bx + by * w)] = (uint8_t)(c.r * 255);
-      sample_buffer[4 * (bx + by * w) + 1] = (uint8_t)(c.g * 255);
-      sample_buffer[4 * (bx + by * w) + 2] = (uint8_t)(c.b * 255);
-      sample_buffer[4 * (bx + by * w) + 3] = (uint8_t)(c.a * 255);
+      fill_sample(bx, by, c);
     }
   }
 }
