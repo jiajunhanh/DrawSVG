@@ -11,12 +11,13 @@ using namespace std;
 
 namespace CMU462 {
 
-constexpr static auto epsilon = numeric_limits<float>::epsilon();
+constexpr static auto epsilond = numeric_limits<double>::epsilon();
+constexpr static auto epsilonf = numeric_limits<float>::epsilon();
 
-inline bool inside_triangle(float x0, float y0,
-                            float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3) {
+inline bool inside_triangle(double x0, double y0,
+                            double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3) {
   Vector2D AB(x1 - x0, y1 - y0);
   Vector2D BC(x2 - x1, y2 - y1);
   Vector2D CA(x0 - x2, y0 - y2);
@@ -27,25 +28,25 @@ inline bool inside_triangle(float x0, float y0,
   auto c1 = cross(BC, BP);
   auto c2 = cross(CA, CP);
   if ((c0 > 0 && c1 > 0 && c2 > 0) || (c0 < 0 && c1 < 0 && c2 < 0)
-      || abs(c0) < epsilon || abs(c1) < epsilon || abs(c2) < epsilon) {
+      || abs(c0) < epsilond || abs(c1) < epsilond || abs(c2) < epsilond) {
     return true;
   } else {
     return false;
   }
 }
 
-inline bool inside_rectangle(float bx0, float by0,
-                             float bx1, float by1,
-                             float x, float y) {
+inline bool inside_rectangle(double bx0, double by0,
+                             double bx1, double by1,
+                             double x, double y) {
   return (x >= bx0 && x <= bx1 && y >= by0 && y <= by1);
 }
 
-inline bool rectangle_segment_intersection(float bx0, float by0,
-                                           float bx1, float by1,
-                                           float x0, float y0,
-                                           float x1, float y1) {
+inline bool rectangle_segment_intersection(double bx0, double by0,
+                                           double bx1, double by1,
+                                           double x0, double y0,
+                                           double x1, double y1) {
 
-  if (abs(x1 - x0) > epsilon) {
+  if (abs(x1 - x0) > epsilond) {
     auto iy0 = y0 + (bx0 - x0) * (y1 - y0) / (x1 - x0);
     auto iy1 = y0 + (bx1 - x0) * (y1 - y0) / (x1 - x0);
     if ((iy0 >= by0 && iy0 <= by1) || (iy1 >= by0 && iy1 <= by1)) {
@@ -53,7 +54,7 @@ inline bool rectangle_segment_intersection(float bx0, float by0,
     }
   }
 
-  if (abs(y1 - y0) > epsilon) {
+  if (abs(y1 - y0) > epsilond) {
     auto ix0 = x0 + (by0 - y0) * (x1 - x0) / (y1 - y0);
     auto ix1 = x0 + (by1 - y0) * (x1 - x0) / (y1 - y0);
     if ((ix0 >= bx0 && ix0 <= bx1) || (ix1 >= bx0 && ix1 <= bx1)) {
@@ -64,11 +65,11 @@ inline bool rectangle_segment_intersection(float bx0, float by0,
   return false;
 }
 
-inline bool rectangle_triangle_intersection(float bx0, float by0,
-                                            float bx1, float by1,
-                                            float x0, float y0,
-                                            float x1, float y1,
-                                            float x2, float y2) {
+inline bool rectangle_triangle_intersection(double bx0, double by0,
+                                            double bx1, double by1,
+                                            double x0, double y0,
+                                            double x1, double y1,
+                                            double x2, double y2) {
   if (inside_rectangle(bx0, by0, bx1, by1, x0, y0)
       || inside_rectangle(bx0, by0, bx1, by1, x1, y1)
       || inside_rectangle(bx0, by0, bx1, by1, x2, y2)
@@ -327,7 +328,7 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   auto dx = x1 - x0;
   auto dy = y1 - y0;
   float gradient{};
-  if (dx < epsilon) {
+  if (dx < epsilonf) {
     gradient = 1.0f;
   } else {
     gradient = dy / dx;
