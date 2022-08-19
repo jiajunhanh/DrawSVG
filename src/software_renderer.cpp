@@ -312,45 +312,89 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   // Task 2: 
   // Implement line rasterization
 
-  int sx0 = (int)floor(x0);
-  int sx1 = (int)floor(x1);
-  int sy0 = (int)floor(y0);
-  int sy1 = (int)floor(y1);
+  const auto fpart = [](float x) { return x - floor(x + 0.5f) + 0.5f; };
+  const auto rfpart = [](float x) { return 0.5f - x + floor(x + 0.5f); };
 
-  bool stepping_over_y = abs(sx0 - sx1) < abs(sy0 - sy1);
-  if (stepping_over_y) {
-    swap(sx0, sy0);
-    swap(sx1, sy1);
+  bool steep = abs(y0 - y1) > abs(x0 - x1);
+  if (steep) {
+    swap(x0, y0);
+    swap(x1, y1);
+  }
+  if (x0 > x1) {
+    swap(x0, x1);
+    swap(y0, y1);
+  }
+  auto dx = x1 - x0;
+  auto dy = y1 - y0;
+  float gradient{};
+  if (dx < epsilon) {
+    gradient = 1.0f;
+  } else {
+    gradient = dy / dx;
   }
 
-  if (sx0 > sx1) {
-    swap(sx0, sx1);
-    swap(sy0, sy1);
+  auto xend = floor(x0) + 0.5f;
+  auto yend = y0 + gradient * (xend - x0);
+  auto xgap = rfpart(x0 + 0.5f);
+  int xpxl1 = floor(x0);
+  int ypxl1 = floor(yend - 0.5f);
+  if (steep) {
+    fill_pixel(ypxl1,
+               xpxl1,
+               {color.r, color.g, color.b, color.a * rfpart(yend) * xgap});
+    fill_pixel(ypxl1 + 1,
+               xpxl1,
+               {color.r, color.g, color.b, color.a * fpart(yend) * xgap});
+  } else {
+    fill_pixel(xpxl1,
+               ypxl1,
+               {color.r, color.g, color.b, color.a * rfpart(yend) * xgap});
+    fill_pixel(xpxl1,
+               ypxl1 + 1,
+               {color.r, color.g, color.b, color.a * fpart(yend) * xgap});
+  }
+  auto intery = yend + gradient;
+
+  xend = floor(x1) + 0.5f;
+  yend = y1 + gradient * (xend - x1);
+  xgap = fpart(x1 + 0.5f);
+  int xpxl2 = floor(x1);
+  int ypxl2 = floor(yend - 0.5f);
+  if (steep) {
+    fill_pixel(ypxl2,
+               xpxl2,
+               {color.r, color.g, color.b, color.a * rfpart(yend) * xgap});
+    fill_pixel(ypxl2 + 1,
+               xpxl2,
+               {color.r, color.g, color.b, color.a * fpart(yend) * xgap});
+  } else {
+    fill_pixel(xpxl2,
+               ypxl2,
+               {color.r, color.g, color.b, color.a * rfpart(yend) * xgap});
+    fill_pixel(xpxl2,
+               ypxl2 + 1,
+               {color.r, color.g, color.b, color.a * fpart(yend) * xgap});
   }
 
-  int dx = sx1 - sx0;
-  int dy = sy1 - sy0;
-  int sy = sy0;
-  int eps = 0;
-
-  for (int sx = sx0; sx <= sx1; ++sx) {
-    if (stepping_over_y) {
-      fill_pixel(sy, sx, color);
-    } else {
-      fill_pixel(sx, sy, color);
+  if (steep) {
+    for (auto x = xpxl1 + 1; x < xpxl2; ++x) {
+      fill_pixel(floor(intery - 0.5f),
+                 x,
+                 {color.r, color.g, color.b, color.a * rfpart(intery)});
+      fill_pixel(static_cast<int>(floor(intery - 0.5f)) + 1,
+                 x,
+                 {color.r, color.g, color.b, color.a * fpart(intery)});
+      intery += gradient;
     }
-
-    eps += dy;
-    if (dy >= 0) {
-      if ((eps << 1) >= dx) {
-        sy++;
-        eps -= dx;
-      }
-    } else {
-      if ((eps << 1) <= -dx) {
-        sy--;
-        eps += dx;
-      }
+  } else {
+    for (auto x = xpxl1 + 1; x < xpxl2; ++x) {
+      fill_pixel(x,
+                 floor(intery - 0.5f),
+                 {color.r, color.g, color.b, color.a * rfpart(intery)});
+      fill_pixel(x,
+                 static_cast<int>(floor(intery - 0.5f)) + 1,
+                 {color.r, color.g, color.b, color.a * fpart(intery)});
+      intery += gradient;
     }
   }
 }
