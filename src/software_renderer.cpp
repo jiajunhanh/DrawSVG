@@ -399,8 +399,8 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
   int sx1 = floor(x1);
   int sy1 = floor(y1);
 
-  for (auto sx = sx0; sx <= sx1; ++sx) {
-    for (auto sy = sy0; sy <= sy1; ++sy) {
+  for (auto sy = sy0; sy <= sy1; ++sy) {
+    for (auto sx = sx0; sx <= sx1; ++sx) {
       fill_sample(sx,
                   sy,
                   sampler->sample_bilinear(tex,
@@ -420,8 +420,8 @@ void SoftwareRendererImp::resolve() {
   // Implement supersampling
   // You may also need to modify other functions marked with "Task 4".
 
-  for (int sx = 0; sx < target_w; ++sx) {
-    for (int sy = 0; sy < target_h; ++sy) {
+  for (int sy = 0; sy < target_h; ++sy) {
+    for (int sx = 0; sx < target_w; ++sx) {
       for (int i = 0; i < 4; ++i) {
         int sum = 0;
         // box
@@ -430,8 +430,8 @@ void SoftwareRendererImp::resolve() {
         int uy = sy * sample_rate;
         int dy = (sy + 1) * sample_rate;
 
-        for (int bx = lx; bx < rx; ++bx) {
-          for (int by = uy; by < dy; ++by) {
+        for (int by = uy; by < dy; ++by) {
+          for (int bx = lx; bx < rx; ++bx) {
             sum += sample_buffer[4 * (bx + by * w) + i];
           }
         }
@@ -462,8 +462,8 @@ void SoftwareRendererImp::fill_pixel(int x, int y, const Color &c) {
   int uy = y * sample_rate;
   int dy = (y + 1) * sample_rate;
 
-  for (int bx = lx; bx < rx; ++bx) {
-    for (int by = uy; by < dy; ++by) {
+  for (int by = uy; by < dy; ++by) {
+    for (int bx = lx; bx < rx; ++bx) {
       sample_buffer[4 * (bx + by * w)] = (uint8_t)(c.r * 255);
       sample_buffer[4 * (bx + by * w) + 1] = (uint8_t)(c.g * 255);
       sample_buffer[4 * (bx + by * w) + 2] = (uint8_t)(c.b * 255);
@@ -495,8 +495,8 @@ void SoftwareRendererImp::rasterize_triangle_box(int bx0, int by0,
 
   if (left_up_inside && right_up_inside && left_bottom_inside
       && right_bottom_inside) {
-    for (int sx = bx0; sx <= bx1; ++sx) {
-      for (int sy = by0; sy <= by1; ++sy) {
+    for (int sy = by0; sy <= by1; ++sy) {
+      for (int sx = bx0; sx <= bx1; ++sx) {
         fill_sample(sx, sy, color);
       }
     }
@@ -507,8 +507,8 @@ void SoftwareRendererImp::rasterize_triangle_box(int bx0, int by0,
                                               x0, y0, x1, y1, x2, y2)) {
     return;
   } else if (bx1 - bx0 <= smallest_box_size && by1 - by0 <= smallest_box_size) {
-    for (int sx = bx0; sx <= bx1; ++sx) {
-      for (int sy = by0; sy <= by1; ++sy) {
+    for (int sy = by0; sy <= by1; ++sy) {
+      for (int sx = bx0; sx <= bx1; ++sx) {
         if (inside_triangle(x0, y0, x1, y1, x2, y2,
                             (float)sx + 0.5f, (float)sy + 0.5f)) {
           fill_sample(sx, sy, color);
