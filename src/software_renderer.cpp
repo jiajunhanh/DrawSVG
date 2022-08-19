@@ -317,6 +317,11 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   int sy0 = (int)floor(y0);
   int sy1 = (int)floor(y1);
 
+  if ((sx0 >= target_w || sx0 < 0 || sy0 >= target_w || sy0 < 0)
+      && (sx1 >= target_w || sx1 < 0 || sy1 >= target_w || sy1 < 0)) {
+    return;
+  }
+
   bool stepping_over_y = abs(sx0 - sx1) < abs(sy0 - sy1);
   if (stepping_over_y) {
     swap(sx0, sy0);
@@ -394,10 +399,10 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
   auto image_width = x1 - x0;
   auto image_height = y1 - y0;
 
-  int sx0 = floor(x0);
-  int sy0 = floor(y0);
-  int sx1 = floor(x1);
-  int sy1 = floor(y1);
+  int sx0 = max(0, static_cast<int>(floor(x0)));
+  int sy0 = max(0, static_cast<int>(floor(y0)));
+  int sx1 = min(w - 1, static_cast<int>(floor(x1)));
+  int sy1 = min(h - 1, static_cast<int>(floor(y1)));
 
   for (auto sy = sy0; sy <= sy1; ++sy) {
     for (auto sx = sx0; sx <= sx1; ++sx) {
@@ -486,6 +491,8 @@ void SoftwareRendererImp::rasterize_triangle_box(int bx0, int by0,
   // rasterize triangle for a box
 
   constexpr static int smallest_box_size = 8;
+
+  if (bx0 >= w || bx1 < 0 || by0 >= h || by1 < 0) return;
 
   bool left_up_inside = inside_triangle(x0, y0, x1, y1, x2, y2,
                                         (float)bx0 + 0.5f, (float)by0 + 0.5f);
