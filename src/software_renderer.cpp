@@ -317,11 +317,6 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   int sy0 = (int)floor(y0);
   int sy1 = (int)floor(y1);
 
-  if ((sx0 >= target_w || sx0 < 0 || sy0 >= target_w || sy0 < 0)
-      && (sx1 >= target_w || sx1 < 0 || sy1 >= target_w || sy1 < 0)) {
-    return;
-  }
-
   bool stepping_over_y = abs(sx0 - sx1) < abs(sy0 - sy1);
   if (stepping_over_y) {
     swap(sx0, sy0);
