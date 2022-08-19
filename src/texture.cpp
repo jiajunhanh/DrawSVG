@@ -135,6 +135,10 @@ Color Sampler2DImp::sample_bilinear(Texture& tex,
     auto t = v * (float)map.height - ((float)sv0 + 0.5f);
     su0 = max(su0, 0);
     sv0 = max(sv0, 0);
+    su1 = max(su1, 0);
+    sv1 = max(sv1, 0);
+    su0 = min(su0, int(map.width - 1));
+    sv0 = min(sv0, int(map.height - 1));
     su1 = min(su1, int(map.width - 1));
     sv1 = min(sv1, int(map.height - 1));
     Color c00{(float)map.texels[4 * (su0 + sv0 * map.width)] / 255.0f,
@@ -168,8 +172,51 @@ Color Sampler2DImp::sample_trilinear(Texture& tex,
 
   // Task 7: Implement trilinear filtering
 
+  auto scale = min(u_scale, v_scale);
+  auto d = log2(scale);
+  auto w = d - floor(d);
+  int l = min(static_cast<int>(floor(d)),
+              static_cast<int>(tex.mipmap.size()) - 2);
+  int step = floor(max(u_scale, v_scale) / scale + 0.5f);
+  Color sum(0, 0, 0, 0);
+
+  if (u_scale < v_scale) {
+    for (int i = 0; i < step; ++i) {
+      auto h0 =
+          sample_bilinear(tex,
+                          u,
+                          v + static_cast<float>(i) * scale
+                              / static_cast<float>(tex.width),
+                          max(0, l));
+      auto h1 =
+          sample_bilinear(tex,
+                          u,
+                          v + static_cast<float>(i) * scale
+                              / static_cast<float>(tex.width),
+                          max(0, l + 1));
+      sum += (1.0f - w) * h0 + w * h1;
+    }
+  } else {
+    for (int i = 0; i < step; ++i) {
+      auto h0 =
+          sample_bilinear(tex,
+                          u + static_cast<float>(i) * scale
+                              / static_cast<float>(tex.height),
+                          v,
+                          max(0, l));
+      auto h1 =
+          sample_bilinear(tex,
+                          u + static_cast<float>(i) * scale
+                              / static_cast<float>(tex.height),
+                          v,
+                          max(0, l + 1));
+      sum += (1.0f - w) * h0 + w * h1;
+    }
+  }
+  return 1.0f / static_cast<float>(step) * sum;
+
   // return magenta for invalid level
-  return Color(1,0,1,1);
+//  return Color(1,0,1,1);
 
 }
 

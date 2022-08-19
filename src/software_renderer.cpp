@@ -401,14 +401,19 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
 
   for (auto sy = sy0; sy <= sy1; ++sy) {
     for (auto sx = sx0; sx <= sx1; ++sx) {
+      auto u0 = ((float)sx - x0 + 0.5f) / image_width;
+      auto v0 = ((float)sy - y0 + 0.5f) / image_height;
+      auto u1 = ((float)sx - x0 + 1.5f) / image_width;
+      auto v1 = ((float)sy - y0 + 1.5f) / image_height;
+      auto u_scale = (u1 - u0) * float(tex.width);
+      auto v_scale = (v1 - v0) * float(tex.height);
       fill_sample(sx,
                   sy,
-                  sampler->sample_bilinear(tex,
-                                           ((float)sx - x0 + 0.5f)
-                                               / image_width,
-                                           ((float)sy - y0 + 0.5f)
-                                               / image_height,
-                                           0));
+                  sampler->sample_trilinear(tex,
+                                            u0,
+                                            v0,
+                                            u_scale,
+                                            v_scale));
     }
   }
 }
